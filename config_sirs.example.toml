@@ -1,0 +1,112 @@
+#########################################################
+# CONFIGURATION SIRS_IMPORT — EXEMPLE (A NE PAS GARDER TEL QUEL)
+# Example configuration file for sirs_import
+#########################################################
+
+
+#########################################################
+# Base CouchDB
+#########################################################
+
+COUCH_URL = "http://localhost:5984"
+COUCH_DB = "crashtest"
+COUCH_USER = "geouser"
+COUCH_PW = "geopw"
+
+# FR : si la base nécessite SSL auto-signé vous pouvez forcer :
+# EN : if CouchDB uses self-signed certs you may force:
+# COUCH_VERIFY_SSL = false
+
+
+
+#########################################################
+# Données locales / Local data environment
+#########################################################
+
+# nom du fichier GPKG / GPKG filename
+GPKG_FILE = "SIRS_points.gpkg"
+
+# nom de la couche / layer name inside the GPKG
+GPKG_LAYER = "SIRS_points"
+
+# FR : tronçons — nom de colonne ou valeur statique
+# EN : troncons — column name or static value
+COL_TRONCONS = "troncons"
+
+
+
+#########################################################
+# DÉSORDRES / DAMAGES
+#########################################################
+
+# FR : linearId — colonne ou valeur UUID statique
+# EN : linearId — column or static UUID
+COL_LINEAR_ID = "linearId"
+
+COL_DATE_DEBUT = "date_debut"
+COL_DATE_FIN = "date_fin"
+
+# FR : auteur du désordre — peut être colonne ou UUID statique
+# EN : crisis author — column or static UUID
+# peut être laissé vide / can be empty
+COL_AUTHOR = "1ec0d5d2de7d9f59346a6305fd000f71"
+
+COL_DESIGNATION = "designation"
+COL_LIBELLE = ""
+
+COL_COMMENTAIRE = "commentaire"
+COL_LIEUDIT = ""
+
+# FR : positionId — colonne ou valeur statique
+# EN : positionId — column or static value
+COL_POSITION_ID = "position"
+
+# FR : coteId — peut être int ou string
+# EN : coteId — may be int or string
+COL_COTE_ID = 3
+
+COL_SOURCE_ID = 2
+COL_CATEGORIE_DESORDRE_ID = ""
+COL_TYPE_DESORDRE_ID = 3
+
+# FR : si false → SIRS recalculera la validation finale
+# EN : if false → final validation performed by SIRS
+IS_VALID = false
+
+
+
+#########################################################
+# FALLBACKS OBSERVATIONS / FALLBACKS FOR MISSING COLUMNS
+#########################################################
+
+# FR : observateur par défaut — colonne ou UUID statique
+# EN : default observer — column or static UUID
+OBS_FALLBACK_OBSERVATEUR_ID = "1ec0d5d2de7d9f59346a6305fd000f71"
+
+OBS_FALLBACK_NB_DESORDRES = 1
+OBS_FALLBACK_URGENCE = 99
+OBS_FALLBACK_SUITE = 2
+
+# FR : photographe par défaut — colonne ou UUID statique
+# EN : default photographer — column or static UUID
+PHO_FALLBACK_PHOTOGRAPH_ID = "1ec0d5d2de7d9f59346a6305fd000f71"
+
+# FR : si pas de date photo → réutiliser date observation
+# EN : if missing photo date → reuse observation date
+PHO_FALLBACK_OBS_DATE = true
+
+# FR : si pas de géométrie photo → coordonnées du désordre
+# EN : if missing photo geometry → reuse damage geometry
+PHO_FALLBACK_DES_GEOM = true
+
+PHO_FALLBACK_ORIENTATION = 99
+PHO_FALLBACK_COTE = 99
+
+
+
+#########################################################
+# VERBOSE
+#########################################################
+
+VERBOSE = true
+
