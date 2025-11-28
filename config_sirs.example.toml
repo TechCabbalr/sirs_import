@@ -27,16 +27,6 @@ GPKG_LAYER = "SIRS_points"
 # Tronçons — soit nom de colonne GPKG (chaine), soit valeur fixe (chaine)
 COL_TRONCONS = "troncons"
 
-# Le chemin ROOT_DIR n'est PAS défini ici.
-# Le script doit être lancé depuis le dossier projet qui contient :
-# - le GPKG
-# - le dossier photos
-# - le config_sirs.toml
-# exécution attendue :
-#    cd /chemin/projet
-#    sirs_import
-
-
 #########################################################
 # DÉSORDRES (champs racine du modèle SIRS)
 #########################################################
