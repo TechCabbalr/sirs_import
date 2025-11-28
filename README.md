@@ -93,6 +93,7 @@ config_sirs.example.toml
 **FR :** Les colonnes d'observations sont détectées automatiquement sur la base du schéma <prefixe1>_<suffixe_autorisé>. Si obs1 est le préfixe, on attend: 
 **EN :** Observation columns are automatically detected by parsing <prefixe1>_<suffixe_autorisé> name patterns. If obs1 is the prefix, we expect:
 
+```
 obs1_date                # obligatoire /mandatory
 obs1_evolution
 obs1_suite
@@ -101,12 +102,14 @@ obs1_observateurId
 obs1_suiteApporterId
 obs1_nombreDesordres
 obs1_urgenceId
+```
 
 
 ## Photos
 **FR :** Les colonnes d'observations sont détectées automatiquement sur la base du schéma <prefixe1>_<prefixe2>_<suffixe_autorisé>. Si obs1 et pho1 sont les préfixes, on attend: 
 **EN :** Observation columns are automatically detected by parsing <prefixe1>_<prefixe2>_<suffixe_autorisé> name patterns. If obs1 and pho1 are the prefixes, we expect:
 
+```
 obs1_pho1_chemin              # obligatoire /mandatory
 obs1_pho1_photographeId
 obs1_pho1_date
@@ -114,6 +117,7 @@ obs1_pho1_designation
 obs1_pho1_libelle
 obs1_pho1_orientationPhoto
 obs1_pho1_coteId
+```
 
 ## Répertoire des photos / Photo directory
 
