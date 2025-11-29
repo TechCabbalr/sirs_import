@@ -13,6 +13,7 @@ authors = [{name = "TechCabbalr"}]
 
 dependencies = [
     "pandas",
+    "geopandas",
     "fiona",
     "shapely",
     "requests",
