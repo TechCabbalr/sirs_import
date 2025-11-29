@@ -116,7 +116,7 @@ Les colonnes non obligatoires peuvent éventuellement être prises en charge par
 
 ## Photos
 
-Les colonnes d'observations sont détectées automatiquement sur la base du schéma '<prefixe1>_<prefixe2>_<suffixe_autorisé>'. Si obs1 et pho1 sont les préfixes, on attend :
+Les colonnes d'observations sont détectées automatiquement sur la base du schéma `<prefixe1>_<prefixe2>_<suffixe_autorisé>`. Si obs1 et pho1 sont les préfixes, on attend :
 
 ```
 obs1_pho1_chemin              # obligatoire
