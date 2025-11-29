@@ -577,7 +577,7 @@ def real_main(argv=None):
 
 def main(argv=None):
     try:
-        realmain()
+        real_main()
     except UserCancelled as e:
         print()
         msg = e.args[0] if e.args else ""
