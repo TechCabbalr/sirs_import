@@ -211,11 +211,15 @@ Strictly NON-COMMERCIAL USE. See [LICENSE](https://github.com/TechCabbalr/sirs_i
 
 * Python ≥ 3.10
 * pandas
+* geopandas
 * fiona
 * shapely
 * requests
-* tomllib / tomli
 * wcwidth
+* tomli; python_version < '3.11'
+* numpy<2
+* numexpr>=2.8.4
+* bottleneck>=1.3.6
 
 ---
 
