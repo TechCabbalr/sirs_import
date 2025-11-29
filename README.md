@@ -82,9 +82,7 @@ sirs_import --upload
 
 Un fichier config_sirs.toml doit être placé dans le répertoire projet. On peut aussi fournir l'argument --config chemin/vers/config.toml.
 
-Exemple fourni :
-
-[config_sirs.example.toml](https://github.com/TechCabbalr/sirs_import/blob/main/config_sirs.example.toml)
+Exemple fourni : [config_sirs.example.toml](https://github.com/TechCabbalr/sirs_import/blob/main/config_sirs.example.toml)
 
 ---
 

@@ -82,9 +82,7 @@ sirs_import --upload
 
 A config_sirs.toml file must exist in the project directory. The argument --config path/to/config can also be given.
 
-Example provided:
-
-[config_sirs.example.toml](https://github.com/TechCabbalr/sirs_import/blob/main/config_sirs.example.toml)
+Example provided: [config_sirs.example.toml](https://github.com/TechCabbalr/sirs_import/blob/main/config_sirs.example.toml)
 
 ---
 
