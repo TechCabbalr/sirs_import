@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+from wcwidth import wcswidth
 from .config_defaults import DEFAULTS
 
 
@@ -57,9 +58,6 @@ def red(text: str) -> str:
 
 def red_block(text: str) -> str:
     return f"\033[41m\033[1m{text}\033[0m"
-
-
-from wcwidth import wcswidth
 
 def print_red_block(lines):
     maxlen = max(wcswidth(line) for line in lines)
@@ -133,7 +131,7 @@ def load_config():
     print_red_block([
         "⛔ ERREUR: aucun fichier config_sirs.toml trouvé dans le répertoire courant.",
         "Placez-vous dans votre dossier projet et relancez:",
-        "cd /ma/digue && python3 -m sirs_import"
+        "cd /chemin/vers/données && sirs_import"
     ])
     print()
     sys.exit(1)

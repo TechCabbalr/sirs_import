@@ -305,7 +305,7 @@ def _diag_categorie_desordre(cols, gdf, rows, errors, warnings):
     )
 
 
-def _diag_positions(cols, gdf, rows, errors):
+def _diag_geometry(cols, gdf, rows, errors):
     try:
         geom = gdf.geometry.dropna().iloc[0] if hasattr(gdf, "geometry") and gdf.geometry.notna().any() else None
         geom_type = geom.geom_type if geom else None
@@ -450,8 +450,9 @@ def diagnose_mapping(available_cols: List[str], gdf, gpkg_schema, contacts) -> T
     _diag_type_desordre(cols, gdf, rows, errors, warnings)
     _diag_categorie_desordre(cols, gdf, rows, errors, warnings)
     _diag_source(cols, gdf, rows, errors)
+    _diag_position(cols, gdf, rows, errors)
     _diag_cote(cols, gdf, rows, errors)
-    _diag_positions(cols, gdf, rows, errors)
+    _diag_geometry(cols, gdf, rows, errors)
     _diag_dates(cols, gdf, rows, errors, gpkg_schema)
 
     return rows, errors, warnings
