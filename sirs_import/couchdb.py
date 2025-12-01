@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, csv
-from .helpers import yelloz
+from .helpers import yellow
 from .exceptions import CouchDBError, DataNotFoundError
 
 from .config_loader import CONFIG, PROJECT_DIR
