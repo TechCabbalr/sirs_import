@@ -26,6 +26,7 @@ Outil Python pour importer des désordres dans SIRS à partir d'un fichier geopa
 # Description
 
 `sirs_import` permet de valider, transformer et importer des données de désordres, observations et photographies dans SIRS, à partir de fichiers GeoPackage (GPKG) et d'un dossier photos.
+
 Le système effectue :
 
 * détection automatique des colonnes
@@ -95,7 +96,7 @@ Les colonnes liées aux désordres peuvent avoir n'importe quel nom et seront sp
 
 ## Observations
 
-Les colonnes d'observations sont détectées automatiquement sur la base du schéma `<prefixe1>_<suffixe_autorisé>`. Si obs1 est le préfixe, on attend :
+Les colonnes d'observations sont détectées automatiquement sur la base du schéma `<prefixe1>_<suffixe_autorisé>`. Par exemple, si on utilise obs1 comme préfixe, on attend :
 
 ```
 obs1_date                # obligatoire

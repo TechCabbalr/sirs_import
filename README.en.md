@@ -94,7 +94,7 @@ Columns related to disorders can have any name, which should be defined in the c
 
 ## Observations
 
-Observation columns are automatically detected by parsing `<prefixe1>_<authorized_suffix>` name patterns. If obs1 is the prefix, we expect:
+Observation columns are automatically detected by parsing `<prefixe1>_<authorized_suffix>` name patterns. If we define obs1 as a prefix, we expect:
 
 ```
 obs1_date                # mandatory
