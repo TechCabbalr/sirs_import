@@ -49,7 +49,7 @@ pip install sirs_import
 ## Développement local
 
 ```
-git clone [https://github.com/jln-codes/sirs_import.git](https://github.com/jln-codes/sirs_import.git)
+git clone https://github.com/jln-codes/sirs_import.git
 cd sirs_import
 pip install -e .
 ```
