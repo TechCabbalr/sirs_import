@@ -48,7 +48,7 @@ pip install sirs_import
 ## Local developpement
 
 ```
-git clone [https://github.com/TechCabbalr/sirs_import.git](https://github.com/jlncodes/sirs_import.git)
+git clone [https://github.com/jln-codes/sirs_import.git](https://github.com/jlncodes/sirs_import.git)
 cd sirs_import
 pip install -e .
 ```
@@ -82,7 +82,7 @@ sirs_import --upload
 
 A config_sirs.toml file must exist in the project directory. The argument --config path/to/config can also be given.
 
-Example provided: [config_sirs.example.toml](https://github.com/TechCabbalr/sirs_import/blob/main/config_sirs.example.toml)
+Example provided: [config_sirs.example.toml](https://github.com/jln-codes/sirs_import/blob/main/sirs_import/config_sirs.example.toml)
 
 ---
 
@@ -203,7 +203,7 @@ The validation process ensures that the import is valid from CouchDB and SIRS po
 
 # License
 
-Strictly NON-COMMERCIAL USE. See [LICENSE](https://github.com/TechCabbalr/sirs_import/blob/4665596ff29e4f1437181034d16e0fa0a1a7dd72/LICENSE) for full terms.
+Strictly NON-COMMERCIAL USE. See [LICENSE](https://github.com/jln-codes/sirs_import/blob/4665596ff29e4f1437181034d16e0fa0a1a7dd72/LICENSE) for full terms.
 
 ---
 

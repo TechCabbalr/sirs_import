@@ -77,8 +77,7 @@ sirs_import --config chemin/vers/config.toml
 
 ```
 
-Exemple fourni :  
-https://github.com/jln-codes/sirs_import/blob/main/config_sirs.example.toml
+Exemple fourni : [config_sirs.example.toml](https://github.com/jln-codes/sirs_import/blob/main/sirs_import/config_sirs.example.toml)
 
 # Données attendues
 

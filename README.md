@@ -1,4 +1,4 @@
-English version [here](https://github.com/TechCabbalr/sirs_import/blob/main/README.en.md)
+English version [here](https://github.com/jln-codes/sirs_import/blob/main/README.en.md)
 
 # sirs_import
 
@@ -49,7 +49,7 @@ pip install sirs_import
 ## Développement local
 
 ```
-git clone [https://github.com/TechCabbalr/sirs_import.git](https://github.com/jln-codes/sirs_import.git)
+git clone [https://github.com/jln-codes/sirs_import.git](https://github.com/jln-codes/sirs_import.git)
 cd sirs_import
 pip install -e .
 ```
@@ -83,7 +83,7 @@ sirs_import --upload
 
 Un fichier config_sirs.toml doit être placé dans le répertoire projet. On peut aussi fournir l'argument --config chemin/vers/config.toml.
 
-Exemple fourni : [config_sirs.example.toml](https://github.com/TechCabbalr/sirs_import/blob/main/config_sirs.example.toml)
+Exemple fourni : [config_sirs.example.toml](https://github.com/jln-codes/sirs_import/blob/main/sirs_import/config_sirs.example.toml)
 
 ---
 
@@ -205,7 +205,7 @@ Le processus de validation garanti que les données seront valide du point de vu
 
 # Licence
 
-Utilisation strictement NON COMMERCIALE. Voir [LICENSE](https://github.com/TechCabbalr/sirs_import/blob/4665596ff29e4f1437181034d16e0fa0a1a7dd72/LICENSE) pour les termes complets.
+Utilisation strictement NON COMMERCIALE. Voir [LICENSE](https://github.com/jln-codes/sirs_import/blob/4665596ff29e4f1437181034d16e0fa0a1a7dd72/LICENSE) pour les termes complets.
 
 ---
 
