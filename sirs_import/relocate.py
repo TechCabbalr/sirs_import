@@ -397,8 +397,17 @@ def process_photo_migration(gdf):
 
     # si on arrive ici :
     # diag["status"] == "needs_migration"
-    print("⚙️ Migration requise : chemins non conformes.")
+    print("⚠️ Souhaitez vous reclasser les photos par tronçon comme le fait SIRS ?")
+    print("(1) Oui je souhaite migrer les photos et ajuster les chemins")
+    print("(2) Non je garde la structure de mon dossier")
 
+    resp = input("Votre choix: ").strip().lower()
+    print()
+    if resp not in ("1","o","oui","y","yes"):
+        print("👍 Aucun changement supplémementaire n'est requis.")
+        return gdf
+
+    print("⚙️ Migration demandée par l'utilisateur.")
 
     # 2) Détection des doublons
     refmap = collect_photo_references(gdf)
