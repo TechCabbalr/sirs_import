@@ -140,9 +140,6 @@ def _extract_photos_from_row(row, obs_key, photos_patterns, obs_date_value, pos_
         if is_empty(raw_chemin):
             continue
 
-        print()         
-        print(f"⚠️ Ajout du préfixe {DIGUE_NAME}/ aux chemins d'accès des photos")
-
         photo_data["chemin"] = f"{DIGUE_NAME}/{_safe_str(raw_chemin)}"
 
         # photographeId
@@ -414,7 +411,8 @@ def generate_json(gdf, patterns, output=None):
         output = f"{GPKG_LAYER}.json"
 
     output_path = os.path.join(PROJECT_DIR, output)
-
+    print()         
+    print(f"⚠️ Ajout du préfixe {DIGUE_NAME}/ aux chemins d'accès des photos")
     results = []
     cols = list(gdf.columns)
 

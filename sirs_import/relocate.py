@@ -412,6 +412,7 @@ def process_photo_migration(gdf):
     if diag["status"] == "conform":
         print()
         print("✅ Les photos sont déjà classées par tronçon.")
+        print()
         print(f"⚠️ Le préfixe {DIGUE_NAME}/ sera ajouté aux chemins d'accès photo durant la construction du JSON pour matcher votre répertoire racine SIRS")
         return gdf
 
@@ -449,6 +450,7 @@ def process_photo_migration(gdf):
             gdf = _update_gdf(gdf, mapping)
             print()
             print("✅ Migration photo terminée.")
+            print()
             print(f"⚠️ Le préfixe {DIGUE_NAME}/ sera ajouté aux chemins d'accès photo durant la construction du JSON pour matcher votre répertoire racine SIRS")
         except Exception as e:
             raise PhotoMigrationError(
@@ -485,6 +487,7 @@ def process_photo_migration(gdf):
             gdf = _update_gdf(gdf, mapping2)
             print()
             print("📁 Migration photo terminée.")
+            print()
             print(f"⚠️ Le préfixe {DIGUE_NAME}/ sera ajouté aux chemins d'accès photo durant la construction du JSON pour matcher votre répertoire racine SIRS")
         except Exception as e:
             raise PhotoMigrationError(
@@ -515,6 +518,7 @@ def process_photo_migration(gdf):
             gdf = _update_gdf(gdf, mapping2)
             print()
             print("📁 Migration photo terminée.")
+            print()
             print(f"⚠️ Le préfixe {DIGUE_NAME}/ sera ajouté aux chemins d'accès photo durant la construction du JSON pour matcher votre répertoire racine SIRS")
         except Exception as e:
             raise PhotoMigrationError(
