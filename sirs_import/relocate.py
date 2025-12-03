@@ -11,6 +11,7 @@ COL_TRONCONS  = CONFIG["COL_TRONCONS"]
 COL_DESIGNATION = CONFIG["COL_DESIGNATION"]
 COL_LIBELLE     = CONFIG["COL_LIBELLE"]
 
+DIGUE_NAME = os.path.basename(PROJECT_DIR)
 
 # ======================================================================
 # UTILITAIRES
@@ -390,48 +391,46 @@ def process_photo_migration(gdf):
             ["⛔ Ces photos sont introuvables physiquement :"] + diag["missing"]
         )
 
-    if diag["status"] == "conform":
-        print()
-        print("✅ Les chemins photos et l'arborescence sont déjà conformes. Aucune migration nécessaire.")
-        return gdf
-
-    # si on arrive ici :
-    # diag["status"] == "needs_migration"
-    print()
-    print("⚠️ Souhaitez vous reclasser les photos par tronçon comme le fait SIRS ?")
-    print("(1) Oui je souhaite migrer les photos et ajuster les chemins")
-    print("(2) Non je garde la structure de mon dossier")
-
-    resp = input("Votre choix: ").strip().lower()
-    print()
-    if resp not in ("1","o","oui","y","yes"):
-        print("👍 Aucun changement supplémentaire n'est requis.")
-        return gdf
-
-    print("⚙️ Migration demandée par l'utilisateur.")
-
     # 2) Détection des doublons
     refmap = collect_photo_references(gdf)
     cat1, cat2, cat3, cat4 = _classify_duplications(refmap)
     if any([cat1, cat2, cat3, cat4]):
         _print_duplication_report(cat1, cat2, cat3, cat4)
         print()
-        if cat4:
-            print("Si cet usage multiple des photos est intentionnel et que vous acceptez leur duplication, vous pouvez continuer.")
-            print("Sinon, corrigez votre fichier avant migration.")
-        else:
-            print("Si cet usage multiple des photos est intentionnel, vous pouvez continuer.")
-            print("Sinon, corrigez votre fichier avant migration.")
+        print("Si cet usage multiple des photos est intentionnel, vous pouvez continuer.")
+        print("Sinon, corrigez votre fichier avant de continuer.")
         print("(1) continuer")
         print("(2) annuler")
         try:
             resp = input("Votre choix: ").strip().lower()
         except EOFError:
-            raise UserCancelled(bold("❌ Migration annulée"))
+            raise UserCancelled(bold("❌ Processus interrompu"))
         if resp not in ("1","o","oui","y","yes"):
-            raise UserCancelled(bold("❌ Migration annulée"))
+            raise UserCancelled(bold("❌ Processus interrompu"))
 
-    # 3) Cas sans collision → KEEP
+    # 3) Conformité
+    if diag["status"] == "conform":
+        print()
+        print("✅ Les photos sont déjà classées par tronçon.")
+        print(f"⚠️ Le préfixe {DIGUE_NAME}/ sera ajouté aux chemins d'accès photo durant la construction du JSON pour matcher votre répertoire racine SIRS")
+        return gdf
+
+    # 4) Proposition de reclassement
+    # diag["status"] == "needs_migration"
+    print()
+    print("⚠️ Souhaitez vous classer vos photos par tronçon et ajuster les chemins ?")
+    print("(1) Oui on peut continuer")
+    print("(2) Non je garde la structure de mon dossier")
+
+    resp = input("Votre choix: ").strip().lower()
+    print()
+    if resp not in ("1","o","oui","y","yes"):
+        print("👍 Ok on garde les données en l'état.")
+        return gdf
+
+    print("⚙️ Migration demandée par l'utilisateur.")
+
+    # 5) Cas sans collision → KEEP
     mapping, collisions = _simulate_relocation(gdf, filename_strategy="keep")
     if not collisions:
         print()
@@ -450,13 +449,14 @@ def process_photo_migration(gdf):
             gdf = _update_gdf(gdf, mapping)
             print()
             print("✅ Migration photo terminée.")
+            print(f"⚠️ Le préfixe {DIGUE_NAME}/ sera ajouté aux chemins d'accès photo durant la construction du JSON pour matcher votre répertoire racine SIRS")
         except Exception as e:
             raise PhotoMigrationError(
                 ["⛔ Erreur durant la migration des photos :", str(e)]
             )
         return gdf
 
-    # 4) Collisions → test prefix_date
+    # 6) Collisions → test prefix_date
     mapping_date, collisions_date = _simulate_relocation(gdf, filename_strategy="prefix_date")
     if not collisions_date:
         print()
@@ -485,13 +485,14 @@ def process_photo_migration(gdf):
             gdf = _update_gdf(gdf, mapping2)
             print()
             print("📁 Migration photo terminée.")
+            print(f"⚠️ Le préfixe {DIGUE_NAME}/ sera ajouté aux chemins d'accès photo durant la construction du JSON pour matcher votre répertoire racine SIRS")
         except Exception as e:
             raise PhotoMigrationError(
                 ["⛔ Erreur durant la migration des photos :", str(e)]
             )
         return gdf
 
-    # 5) Prefix date ne suffit pas → UUID
+    # 7) Prefix date ne suffit pas → UUID
     mapping_uuid, collisions_uuid = _simulate_relocation(gdf, filename_strategy="uuid")
     if not collisions_uuid:
         print()
@@ -514,13 +515,14 @@ def process_photo_migration(gdf):
             gdf = _update_gdf(gdf, mapping2)
             print()
             print("📁 Migration photo terminée.")
+            print(f"⚠️ Le préfixe {DIGUE_NAME}/ sera ajouté aux chemins d'accès photo durant la construction du JSON pour matcher votre répertoire racine SIRS")
         except Exception as e:
             raise PhotoMigrationError(
                 ["⛔ Erreur durant la migration des photos :", str(e)]
             )
         return gdf
 
-    # 6) Collisions même avec UUID (théoriquement impossible)
+    # 8) Collisions même avec UUID (théoriquement impossible)
     raise PhotoMigrationError(
         ["⛔ Collisions impossibles à résoudre même avec UUID (improbable).",
          "Vérifiez les chemins et permissions disque."]

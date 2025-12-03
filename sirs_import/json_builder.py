@@ -50,6 +50,7 @@ PHOTO_SUFFIXES = {
     "coteId",
 }
 
+DIGUE_NAME = os.path.basename(PROJECT_DIR)
 
 def _safe_str(v):
     if v is None:
@@ -139,7 +140,10 @@ def _extract_photos_from_row(row, obs_key, photos_patterns, obs_date_value, pos_
         if is_empty(raw_chemin):
             continue
 
-        photo_data["chemin"] = _safe_str(raw_chemin)
+        print()         
+        print(f"⚠️ Ajout du préfixe {DIGUE_NAME}/ aux chemins d'accès des photos")
+
+        photo_data["chemin"] = f"{DIGUE_NAME}/{_safe_str(raw_chemin)}"
 
         # photographeId
         if not is_empty(raw_photographe):
