@@ -10,6 +10,7 @@ from .config_loader import CONFIG, PROJECT_DIR
 COL_TRONCONS  = CONFIG["COL_TRONCONS"]
 COL_DESIGNATION = CONFIG["COL_DESIGNATION"]
 COL_LIBELLE     = CONFIG["COL_LIBELLE"]
+PHO_FALLBACK_OBS_DATE = CONFIG.get("PHO_FALLBACK_OBS_DATE", False)
 
 DIGUE_NAME = os.path.basename(PROJECT_DIR)
 
@@ -222,9 +223,21 @@ def _simulate_relocation(gdf, filename_strategy="keep"):
             if filename_strategy == "keep":
                 pass
             elif filename_strategy == "prefix_date":
+
+                # Date photo (<prefixe1>_<prefixe2>_date)
                 obs_date_col = col.replace("_chemin", "_date")
                 d = row.get(obs_date_col)
-                prefix = "00000000_" if pd.isna(d) else d.strftime("%Y%m%d") + "_"
+
+                # Fallback sur la date d’observation si activé
+                if (pd.isna(d) or d is None) and PHO_FALLBACK_OBS_DATE:
+                    # Déduire la colonne <prefixe1>_date à partir du nom de la colonne photo
+                    parts = col.split("_")
+                    obs_date_col_obs = parts[0] + "_date"
+                    d = row.get(obs_date_col_obs)
+
+                # Préfixe final
+                prefix = "00000000_" if pd.isna(d) or d is None else d.strftime("%Y%m%d") + "_"
+
                 root = prefix + root
             elif filename_strategy == "uuid":
                 root = uuid.uuid4().hex
@@ -361,9 +374,22 @@ def _generate_target_mapping(gdf, collisions, strategy_for_collisions, strategy_
                 fname = fname_keep
 
             elif strategy == "prefix_date":
+
+                # Date photo (<prefixe1>_<prefixe2>_date)
                 obs_date_col = col.replace("_chemin", "_date")
                 d = row.get(obs_date_col)
-                prefix = "00000000_" if pd.isna(d) else d.strftime("%Y%m%d") + "_"
+
+                # Fallback sur la date d’observation si activé
+                if (pd.isna(d) or d is None) and PHO_FALLBACK_OBS_DATE:
+                    # Déduire la colonne <prefixe1>_date à partir du nom de la colonne photo
+                    parts = col.split("_")
+                    obs_date_col_obs = parts[0] + "_date"
+                    d = row.get(obs_date_col_obs)
+
+                # Préfixe final
+                prefix = "00000000_" if pd.isna(d) or d is None else d.strftime("%Y%m%d") + "_"
+
+
                 fname = prefix + root + ext
 
             elif strategy == "uuid":
