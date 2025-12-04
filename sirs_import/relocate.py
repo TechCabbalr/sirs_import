@@ -53,6 +53,44 @@ def _file_exists(path: str) -> bool:
     except Exception:
         return False
 
+def _get_effective_photo_date(row, col, pd):
+
+    # 1) Date photo : <prefixe1>_<prefixe2>_date
+    pho_date_col = col.replace("_chemin", "_date")
+    d = row.get(pho_date_col)
+    if d is not None and not pd.isna(d):
+        return d
+
+    # 2) Fallback observation : <prefixe1>_date si activé
+    if PHO_FALLBACK_OBS_DATE:
+        parts = col.split("_")
+        if parts:
+            obs_date_col = parts[0] + "_date"
+            d2 = row.get(obs_date_col)
+            if d2 is not None and not pd.isna(d2):
+                return d2
+
+    # 3) Rien de fiable
+    return None
+
+def _build_target_filename(base, row, col, strategy, pd):
+
+    root, ext = _split_filename(base)
+    ext = ext.lower()
+
+    if strategy == "keep":
+        return root + ext
+
+    if strategy == "uuid":
+        return uuid.uuid4().hex + ext
+
+    if strategy == "prefix_date":
+        d = _get_effective_photo_date(row, col, pd)
+        prefix = "00000000_" if d is None else d.strftime("%Y%m%d") + "_"
+        return prefix + root + ext
+
+    raise ValueError(f"unknown strategy: {strategy}")
+
 
 # ======================================================================
 # DIAGNOSTIC
@@ -210,48 +248,31 @@ def _simulate_relocation(gdf, filename_strategy="keep"):
     photo_cols = [c for c in gdf.columns if "_pho" in c and c.endswith("_chemin")]
     mapping = {}
     collisions = []
+
     for _, row in gdf.iterrows():
         troncon = str(row.get(COL_TRONCONS, "undefined")).strip()
+
         for col in photo_cols:
             raw = row.get(col)
             if not raw:
                 continue
+
             old_abs = _resolve_absolute_path(raw)
             base = os.path.basename(old_abs)
-            root, ext = _split_filename(base)
-            ext = ext.lower()
-            if filename_strategy == "keep":
-                pass
-            elif filename_strategy == "prefix_date":
 
-                # Date photo (<prefixe1>_<prefixe2>_date)
-                obs_date_col = col.replace("_chemin", "_date")
-                d = row.get(obs_date_col)
+            # Construire le nom final selon la stratégie
+            fname = _build_target_filename(base, row, col, filename_strategy, pd)
 
-                # Fallback sur la date d’observation si activé
-                if (pd.isna(d) or d is None) and PHO_FALLBACK_OBS_DATE:
-                    # Déduire la colonne <prefixe1>_date à partir du nom de la colonne photo
-                    parts = col.split("_")
-                    obs_date_col_obs = parts[0] + "_date"
-                    d = row.get(obs_date_col_obs)
-
-                # Préfixe final
-                prefix = "00000000_" if pd.isna(d) or d is None else d.strftime("%Y%m%d") + "_"
-
-                root = prefix + root
-            elif filename_strategy == "uuid":
-                root = uuid.uuid4().hex
-            fname = root + ext
             new_abs = os.path.join(PROJECT_DIR, troncon, fname)
             mapping.setdefault(old_abs, []).append(new_abs)
-    all_dests = []
-    for lst in mapping.values():
-        for dest in lst:
-            all_dests.append(os.path.normpath(dest))
+
+    # Détection des collisions
+    all_dests = [os.path.normpath(dest) for lst in mapping.values() for dest in lst]
     counts = {}
     for d in all_dests:
         counts[d] = counts.get(d, 0) + 1
     collisions = [d for d, n in counts.items() if n > 1]
+
     return mapping, collisions
 
 
@@ -345,7 +366,7 @@ def _generate_target_mapping(gdf, collisions, strategy_for_collisions, strategy_
     photo_cols = [c for c in gdf.columns if "_pho" in c and c.endswith("_chemin")]
     mapping = {}
 
-    # liste normalisée des chemins en collision
+    # Chemins en collision
     collisions_norm = set(os.path.normpath(os.path.abspath(c)) for c in collisions)
 
     for _, row in gdf.iterrows():
@@ -358,50 +379,28 @@ def _generate_target_mapping(gdf, collisions, strategy_for_collisions, strategy_
 
             old_abs = os.path.abspath(_resolve_absolute_path(raw))
             base = os.path.basename(old_abs)
+
+            # Chemin "keep" (pour détecter la collision)
             root, ext = _split_filename(base)
             ext = ext.lower()
-
-            # on reconstruit new_abs "keep"
             fname_keep = root + ext
             new_abs_keep = os.path.normpath(os.path.join(PROJECT_DIR, troncon, fname_keep))
 
-            # ce fichier est-il affecté par collision ?
+            # Collision ?
             in_collision = (new_abs_keep in collisions_norm)
 
+            # Sélection de la bonne stratégie
             strategy = strategy_for_collisions if in_collision else strategy_other
 
-            if strategy == "keep":
-                fname = fname_keep
+            # Construction du nom final via la fonction centralisée
+            fname = _build_target_filename(base, row, col, strategy, pd)
 
-            elif strategy == "prefix_date":
-
-                # Date photo (<prefixe1>_<prefixe2>_date)
-                obs_date_col = col.replace("_chemin", "_date")
-                d = row.get(obs_date_col)
-
-                # Fallback sur la date d’observation si activé
-                if (pd.isna(d) or d is None) and PHO_FALLBACK_OBS_DATE:
-                    # Déduire la colonne <prefixe1>_date à partir du nom de la colonne photo
-                    parts = col.split("_")
-                    obs_date_col_obs = parts[0] + "_date"
-                    d = row.get(obs_date_col_obs)
-
-                # Préfixe final
-                prefix = "00000000_" if pd.isna(d) or d is None else d.strftime("%Y%m%d") + "_"
-
-
-                fname = prefix + root + ext
-
-            elif strategy == "uuid":
-                fname = uuid.uuid4().hex + ext
-
-            else:
-                raise ValueError(f"unknown strategy: {strategy}")
-
+            # Chemin final
             new_abs = os.path.join(PROJECT_DIR, troncon, fname)
             mapping.setdefault(old_abs, []).append(new_abs)
 
     return mapping
+
 
 
 # ======================================================================
