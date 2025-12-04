@@ -316,12 +316,6 @@ def real_main(argv=None):
     except Exception as e:
         raise GpkgReadError(f"Fiona : {e}")
 
-    # les colonnes vides ne sont pas autorisées
-    try:
-        check_no_empty_columns(gdf)
-    except DataValidationError:
-        raise
-
     # extraction des linearId et observateurId
     if EXTRACT_ONLY:
         try:
@@ -339,10 +333,19 @@ def real_main(argv=None):
         except GpkgWriteError:
             raise
         return
+    
+    print()
+    print(f"⚙️ Vérifications préliminaires de {GPKG_PATH} ...")	
+	
+    # les colonnes vides ne sont pas autorisées
+    try:
+        check_no_empty_columns(gdf)
+    except DataValidationError:
+        raise
 
     # validation fallbacks avec contacts ET utilisateurs
-    validate_fallbacks(contact_ids, user_ids)
-	
+    validate_fallbacks(contact_ids, user_ids)		
+
     # démarrage du processus principal
     total_rows = len(gdf)
     total_cols = len(cols)
