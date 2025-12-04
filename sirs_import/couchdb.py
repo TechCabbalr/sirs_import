@@ -99,6 +99,46 @@ def get_all_troncons(write_txt=True):
 
     return troncons
 
+def get_all_users(write_txt=True):
+    docs = couchdb_find(
+        {"@class": "fr.sirs.core.model.Utilisateur"},
+        fields=["_id", "login", "role"],
+    )
+
+    if not docs:
+        raise DataNotFoundError("Aucun utilisateur trouvé dans CouchDB.")
+
+    users = []
+    for u in docs:
+        obj = {"userId": u.get("_id")}
+
+        login = u.get("login")
+        if isinstance(login, str):
+            login = login.strip()
+        if login not in (None, "", [], {}):
+            obj["login"] = login
+
+        role = u.get("role")
+        if isinstance(role, str):
+            role = role.strip()
+        if role not in (None, "", [], {}):
+            obj["role"] = role
+
+        users.append(obj)
+
+    if write_txt:
+        fname = os.path.join(PROJECT_DIR, f"{COUCH_DB}_userId.txt")
+        with open(fname, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f, delimiter="\t")
+            writer.writerow(["userId", "login", "role"])
+            for u in users:
+                writer.writerow([
+                    u["userId"],
+                    u.get("login", ""),
+                    u.get("role", ""),
+                ])
+
+    return users
 
 def get_all_contacts(write_txt=True):
     docs = couchdb_find(
