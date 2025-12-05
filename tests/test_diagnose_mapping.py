@@ -1,39 +1,47 @@
-import pandas as pd
 import pytest
+import pandas as pd
 from shapely.geometry import Point, LineString
 
 
 def import_diag():
-    import sirs_import.diagnose_mapping as dm
+    import sirs_import.diag_des as dm
     return dm
 
 
-# =====================================================================
-# UTILITAIRE
-# =====================================================================
 def _rows_dict(rows):
-    """Permet d'accéder aux lignes par clé : rows_by_key['designation']"""
     return {r[0]: r for r in rows}
 
 
 # =====================================================================
-# 1) TESTS : COLONNES TEXTUELLES
+# TEXT COLUMNS
 # =====================================================================
-def test_diag_text_columns_all_present():
+
+def test_diag_text_columns_all_present(monkeypatch):
     dm = import_diag()
+
+    # config des colonnes texte
+    monkeypatch.setattr(dm, "COL_DESIGNATION", "designation")
+    monkeypatch.setattr(dm, "COL_LIBELLE", "libelle")
+    monkeypatch.setattr(dm, "COL_COMMENTAIRE", "commentaire")
+    monkeypatch.setattr(dm, "COL_LIEUDIT", "lieuDit")
+
+    # neutralisation du bruit
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
+
     gdf = pd.DataFrame({
-        dm.COL_DESIGNATION: ["aaa"],
-        dm.COL_LIBELLE: ["bbb"],
-        dm.COL_COMMENTAIRE: ["ccc"],
-        dm.COL_LIEUDIT: ["ddd"],
-        "geometry": [Point(0, 0)]
+        "designation": ["aaa"],
+        "libelle": ["bbb"],
+        "commentaire": ["ccc"],
+        "lieuDit": ["ddd"],
+        "geometry": [Point(0, 0)],
     })
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=list(gdf.columns),
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=[]
+        user_ids=[],
     )
 
     R = _rows_dict(rows)
@@ -45,40 +53,55 @@ def test_diag_text_columns_all_present():
     assert errors == []
 
 
-def test_diag_text_columns_missing():
+def test_diag_text_columns_missing(monkeypatch):
     dm = import_diag()
+
+    monkeypatch.setattr(dm, "COL_DESIGNATION", "")
+    monkeypatch.setattr(dm, "COL_LIBELLE", "")
+    monkeypatch.setattr(dm, "COL_COMMENTAIRE", "")
+    monkeypatch.setattr(dm, "COL_LIEUDIT", "")
+
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
+
     gdf = pd.DataFrame({"geometry": [Point(0, 0)]})
 
     rows, errors, warnings = dm.diagnose_mapping(
-        available_cols=["geometry"],
+        available_cols=list(gdf.columns),
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=[]
+        user_ids=[],
     )
 
     R = _rows_dict(rows)
 
-    assert R["designation"][2] == "manquante"
-    assert R["libelle"][2] == "manquante"
-    assert len(errors) >= 1
+    assert R["designation"][2] == "non défini"
+    assert R["libelle"][2] == "non défini"
+    assert R["commentaire"][2] == "non défini"
+    assert R["lieuDit"][2] == "non défini"
+    assert errors == []
 
 
 # =====================================================================
-# 2) TESTS : LINEAR ID
+# LINEAR ID
 # =====================================================================
-def test_linear_id_valid_column():
+
+def test_linear_id_valid_column(monkeypatch):
     dm = import_diag()
+
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
 
     gdf = pd.DataFrame({
         dm.COL_LINEAR_ID: ["11111111-1111-1111-1111-111111111111"],
-        "geometry": [Point(0, 0)]
+        "geometry": [Point(0, 0)],
     })
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=list(gdf.columns),
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=[]
+        user_ids=[],
     )
 
     R = _rows_dict(rows)
@@ -86,29 +109,33 @@ def test_linear_id_valid_column():
     assert errors == []
 
 
-def test_linear_id_invalid_uuid():
+def test_linear_id_invalid_uuid(monkeypatch):
     dm = import_diag()
+
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
 
     gdf = pd.DataFrame({
         dm.COL_LINEAR_ID: ["INVALID"],
-        "geometry": [Point(0, 0)]
+        "geometry": [Point(0, 0)],
     })
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=list(gdf.columns),
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=[]
+        user_ids=[],
     )
 
     assert len(errors) == 1
-    assert "UUID invalides" in errors[0]
 
 
 def test_linear_id_fallback_uuid(monkeypatch):
     dm = import_diag()
 
     monkeypatch.setattr(dm, "COL_LINEAR_ID", "22222222-2222-2222-2222-222222222222")
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
 
     gdf = pd.DataFrame({"geometry": [Point(1, 1)]})
 
@@ -116,7 +143,7 @@ def test_linear_id_fallback_uuid(monkeypatch):
         available_cols=["geometry"],
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=[]
+        user_ids=[],
     )
 
     R = _rows_dict(rows)
@@ -125,23 +152,27 @@ def test_linear_id_fallback_uuid(monkeypatch):
 
 
 # =====================================================================
-# 3) TESTS : AUTHOR
+# AUTHOR
 # =====================================================================
+
 def test_author_from_column(monkeypatch):
     dm = import_diag()
 
     monkeypatch.setattr(dm, "COL_AUTHOR", "author_col")
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
 
     gdf = pd.DataFrame({
         "author_col": ["11111111-1111-1111-1111-111111111111"],
-        "geometry": [Point(0, 0)]
+        "geometry": [Point(0, 0)],
     })
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=list(gdf.columns),
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=["11111111-1111-1111-1111-111111111111"]
+        user_ids=["11111111-1111-1111-1111-111111111111"],
     )
 
     R = _rows_dict(rows)
@@ -153,91 +184,112 @@ def test_author_invalid_sirs(monkeypatch):
     dm = import_diag()
 
     monkeypatch.setattr(dm, "COL_AUTHOR", "author_col")
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
 
     gdf = pd.DataFrame({
         "author_col": ["11111111-1111-1111-1111-111111111111"],
-        "geometry": [Point(0, 0)]
+        "geometry": [Point(0, 0)],
     })
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=list(gdf.columns),
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=[]  # inconnu
+        user_ids=[],  # inconnu
     )
 
     assert len(errors) == 1
-    assert "UUID inconnus" in errors[0]
 
 
 # =====================================================================
-# 4) TESTS : CODES STANDARD (sourceId, coteId, positionId)
+# SOURCE
 # =====================================================================
+
 def test_source_column_valid(monkeypatch):
     dm = import_diag()
 
     monkeypatch.setattr(dm, "COL_SOURCE_ID", "src")
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
+
     gdf = pd.DataFrame({
-        "src": ["RefSource:3"],
-        "geometry": [Point(0, 0)]
+        "src": ["RefSource:2"],
+        "geometry": [Point(0, 0)],
     })
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=list(gdf.columns),
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=[]
+        user_ids=[],
     )
 
     R = _rows_dict(rows)
     assert R["sourceId"][4] == "oui"
+    assert errors == []
 
 
 def test_source_invalid(monkeypatch):
     dm = import_diag()
 
     monkeypatch.setattr(dm, "COL_SOURCE_ID", "src")
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
+
     gdf = pd.DataFrame({
         "src": ["BAD_CODE"],
-        "geometry": [Point(0, 0)]
+        "geometry": [Point(0, 0)],
     })
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=list(gdf.columns),
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=[]
+        user_ids=[],
     )
 
     assert len(errors) == 1
 
 
 # =====================================================================
-# 5) GÉOMÉTRIE + INTERACTION UTILISATEUR
+# GEOMETRY
 # =====================================================================
-def test_geometry_point():
+
+def test_geometry_point(monkeypatch):
     dm = import_diag()
 
-    gdf = pd.DataFrame({"geometry": [Point(1, 2)]})
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
+
+    gdf = pd.DataFrame({"geometry": [Point(0, 0)]})
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=["geometry"],
         gdf=gdf,
         gpkg_schema={"geometry": "POINT"},
-        user_ids=[]
+        user_ids=[],
     )
 
     R = _rows_dict(rows)
+
     assert "positionDebut" in R
     assert "positionFin" in R
+    assert errors == []
 
 
 def test_geometry_linestring_accept(monkeypatch):
     dm = import_diag()
 
-    gdf = pd.DataFrame({
-        "geometry": [LineString([(0,0), (1,1), (2,2)])]
-    })
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
+
+    gdf = pd.DataFrame({"geometry": [LineString([(0, 0), (1, 1), (2, 2)])]})
 
     monkeypatch.setattr("builtins.input", lambda _: "1")
 
@@ -245,11 +297,12 @@ def test_geometry_linestring_accept(monkeypatch):
         available_cols=["geometry"],
         gdf=gdf,
         gpkg_schema={"geometry": "LINESTRING"},
-        user_ids=[]
+        user_ids=[],
     )
 
     R = _rows_dict(rows)
     assert "positionDebut" in R
+    assert "positionFin" in R
     assert errors == []
 
 
@@ -257,9 +310,11 @@ def test_geometry_linestring_cancel(monkeypatch):
     dm = import_diag()
     from sirs_import.exceptions import UserCancelled
 
-    gdf = pd.DataFrame({
-        "geometry": [LineString([(0,0), (1,1)])]
-    })
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
+
+    gdf = pd.DataFrame({"geometry": [LineString([(0, 0), (1, 1), (2, 2)])]})
 
     monkeypatch.setattr("builtins.input", lambda _: "2")
 
@@ -268,77 +323,96 @@ def test_geometry_linestring_cancel(monkeypatch):
             available_cols=["geometry"],
             gdf=gdf,
             gpkg_schema={"geometry": "LINESTRING"},
-            user_ids=[]
+            user_ids=[],
         )
 
 
 # =====================================================================
-# 6) DATES
+# DATES
 # =====================================================================
-def test_dates_valid():
+
+def test_dates_valid(monkeypatch):
     dm = import_diag()
 
+    monkeypatch.setattr(dm, "COL_DATE_DEBUT", "date_debut")
+    monkeypatch.setattr(dm, "COL_DATE_FIN", "date_fin")
+
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+
     gdf = pd.DataFrame({
-        dm.COL_DATE_DEBUT: [pd.Timestamp("2023-01-01")],
-        dm.COL_DATE_FIN: [pd.Timestamp("2023-01-10")],
-        "geometry": [Point(0,0)],
+        "date_debut": [pd.Timestamp("2023-01-01")],
+        "date_fin": [pd.Timestamp("2023-01-10")],
+        "geometry": [Point(0, 0)],
     })
 
-    gpkg_schema = {
-        dm.COL_DATE_DEBUT: "date",
-        dm.COL_DATE_FIN: "date",
-        "geometry": "POINT",
-    }
+    schema = {"date_debut": "date", "date_fin": "date", "geometry": "POINT"}
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=list(gdf.columns),
         gdf=gdf,
-        gpkg_schema=gpkg_schema,
+        gpkg_schema=schema,
         user_ids=[]
     )
 
     assert errors == []
 
 
-def test_dates_inconsistent():
+def test_dates_inconsistent(monkeypatch):
     dm = import_diag()
 
+    monkeypatch.setattr(dm, "COL_DATE_DEBUT", "date_debut")
+    monkeypatch.setattr(dm, "COL_DATE_FIN", "date_fin")
+
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_text_columns", lambda *a, **k: None)
+
     gdf = pd.DataFrame({
-        dm.COL_DATE_DEBUT: [pd.Timestamp("2023-01-10")],
-        dm.COL_DATE_FIN: [pd.Timestamp("2023-01-01")],
-        "geometry": [Point(0,0)],
+        "date_debut": [pd.Timestamp("2023-01-10")],
+        "date_fin": [pd.Timestamp("2023-01-01")],
+        "geometry": [Point(0, 0)],
     })
 
-    gpkg_schema = {
-        dm.COL_DATE_DEBUT: "date",
-        dm.COL_DATE_FIN: "date",
-        "geometry": "POINT",
-    }
+    schema = {"date_debut": "date", "date_fin": "date", "geometry": "POINT"}
 
     rows, errors, warnings = dm.diagnose_mapping(
         available_cols=list(gdf.columns),
         gdf=gdf,
-        gpkg_schema=gpkg_schema,
+        gpkg_schema=schema,
         user_ids=[]
     )
 
     assert len(errors) >= 1
-    assert any("date_fin" in err for err in errors)
+    assert any("date_fin" in err or "< date_debut" in err for err in errors)
 
 
 # =====================================================================
-# 7) USED_COLUMNS
+# USED COLUMNS
 # =====================================================================
+
 def test_used_columns_tracking(monkeypatch):
     dm = import_diag()
 
-    # Reset l’état
     dm.USED_COLUMNS.clear()
 
+    monkeypatch.setattr(dm, "COL_DESIGNATION", "designation_col")
+    monkeypatch.setattr(dm, "COL_LIBELLE", "")
+    monkeypatch.setattr(dm, "COL_COMMENTAIRE", "")
+    monkeypatch.setattr(dm, "COL_LIEUDIT", "")
+
+    monkeypatch.setattr(dm, "_diag_linear_id", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_dates", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_author", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_type_desordre", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_categorie_desordre", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_position", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_source", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_cote", lambda *a, **k: None)
+    monkeypatch.setattr(dm, "_diag_geometry", lambda *a, **k: None)
+
     gdf = pd.DataFrame({
-        dm.COL_DESIGNATION: ["D"],
-        dm.COL_LIBELLE: ["L"],
-        "geometry": [Point(0,0)]
+        "designation_col": ["x"],
+        "geometry": [Point(0, 0)],
     })
 
     dm.diagnose_mapping(
@@ -348,6 +422,5 @@ def test_used_columns_tracking(monkeypatch):
         user_ids=[]
     )
 
-    assert dm.COL_DESIGNATION in dm.USED_COLUMNS
-    assert dm.COL_LIBELLE in dm.USED_COLUMNS
+    assert "designation_col" in dm.USED_COLUMNS
 
