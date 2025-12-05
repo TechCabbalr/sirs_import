@@ -106,7 +106,7 @@ def test_integration_prefix_date_collision(tmp_path, monkeypatch):
     ])
 
     # simulate: migration → "prefix_date seulement collisions"
-    inputs = iter(["1", "1"])
+    inputs = iter(["1", "1", "1"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     out = pm.process_photo_migration(gdf.copy())
@@ -148,8 +148,9 @@ def test_integration_uuid_collision(tmp_path, monkeypatch):
     ])
 
     # simulate: migration → UUID collisions
-    inputs = iter(["1", "3"])
+    inputs = iter(["1", "1", "1"]) 
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
 
     out = pm.process_photo_migration(gdf.copy())
 
@@ -191,6 +192,8 @@ def test_integration_conform(tmp_path, monkeypatch):
     monkeypatch.setattr(pm, "_diagnose_paths", lambda g: {"status": "conform", "missing": []})
 
     out = pm.process_photo_migration(gdf.copy())
+    
+    assert out.equals(gdf)
 
-    assert out is gdf
+
 

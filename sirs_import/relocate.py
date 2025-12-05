@@ -4,7 +4,7 @@ import re
 import uuid
 import shutil
 from datetime import datetime
-from .helpers import bold, yellow
+from .helpers import bold, yellow, is_empty
 from .exceptions import UserCancelled, PhotoMigrationError, GpkgUpdateError
 from .config_loader import CONFIG, PROJECT_DIR
 COL_TRONCONS  = CONFIG["COL_TRONCONS"]
@@ -92,38 +92,45 @@ def _build_target_filename(base, row, col, strategy, pd):
     raise ValueError(f"unknown strategy: {strategy}")
 
 
+def _iter_photo_entries(gdf):
+    import pandas as pd
+    photo_cols = [c for c in gdf.columns if "_pho" in c and c.endswith("_chemin")]
+    for idx, row in gdf.iterrows():
+        troncon = str(row.get(COL_TRONCONS, "undefined")).strip()
+        for col in photo_cols:
+            raw = row.get(col)
+            if is_empty(raw):
+                continue
+            raw_str = str(raw).strip().replace("\\", "/")
+            yield idx, row, troncon, col, raw_str
+
+
 # ======================================================================
 # DIAGNOSTIC
 # ======================================================================
 
 # analyse la conformité des chemins photos dans le GDF
 def _diagnose_paths(gdf):
-    import pandas as pd
-    photo_cols = [
-        c for c in gdf.columns
-        if "_pho" in c and c.endswith("_chemin")
-    ]
     missing = []
     all_conform = True
-    for _, row in gdf.iterrows():
-        troncon = str(row.get(COL_TRONCONS, "")).strip()
-        for col in photo_cols:
-            raw = row.get(col)
-            if raw is None or pd.isna(raw):
-                continue
-            raw_str = str(raw).replace("\\", "/").strip()
-            if raw_str == "" or raw_str.lower() in ("na", "nan", "none", "<na>"):
-                continue
-            if not raw_str.startswith(f"{troncon}/"):
-                all_conform = False
-            abs_path = _resolve_absolute_path(raw_str)
-            if not _file_exists(abs_path):
-                missing.append(abs_path)
+
+    for _, row, troncon, col, raw in _iter_photo_entries(gdf):
+        # Conformité folder
+        if not raw.startswith(f"{troncon}/"):
+            all_conform = False
+
+        abs_path = _resolve_absolute_path(raw)
+        if not _file_exists(abs_path):
+            missing.append(abs_path)
+
     if missing:
         return {"status": "missing", "missing": missing}
+
     if all_conform:
         return {"status": "conform", "missing": []}
+
     return {"status": "needs_migration", "missing": []}
+
 
 
 # ======================================================================
@@ -132,28 +139,27 @@ def _diagnose_paths(gdf):
 
 # crée une map des fichiers vers leurs références multiples dans le gdf
 def collect_photo_references(gdf):
-    photo_cols = [c for c in gdf.columns if "_pho" in c and c.endswith("_chemin")]
     refmap = {}
-    for idx, row in gdf.iterrows():
-        obs_id = idx
-        troncon = str(row.get(COL_TRONCONS)).strip()
+
+    for idx, row, troncon, col, raw in _iter_photo_entries(gdf):
         desordre = None
+
         if COL_DESIGNATION in gdf.columns:
-            val = row.get(COL_DESIGNATION)
-            if isinstance(val, str) and val.strip():
-                desordre = val.strip()
+            v = row.get(COL_DESIGNATION)
+            if isinstance(v, str) and v.strip():
+                desordre = v.strip()
+
         if desordre is None and COL_LIBELLE in gdf.columns:
-            val = row.get(COL_LIBELLE)
-            if isinstance(val, str) and val.strip():
-                desordre = val.strip()
-        for col in photo_cols:
-            raw = row.get(col)
-            if not raw:
-                continue
-            abs_path = os.path.abspath(_resolve_absolute_path(raw))
-            refmap.setdefault(abs_path, []).append(
-                {"obs_id": obs_id, "troncon": troncon, "desordre": desordre, "col": col}
-            )
+            v = row.get(COL_LIBELLE)
+            if isinstance(v, str) and v.strip():
+                desordre = v.strip()
+
+        abs_path = os.path.abspath(_resolve_absolute_path(raw))
+
+        refmap.setdefault(abs_path, []).append(
+            {"obs_id": idx, "troncon": troncon, "desordre": desordre, "col": col}
+        )
+
     return refmap
 
 
@@ -245,35 +251,26 @@ def _print_duplication_report(cat1, cat2, cat3, cat4):
 # simule la relocalisation et détecte les collisions potentielles
 def _simulate_relocation(gdf, filename_strategy="keep"):
     import pandas as pd
-    photo_cols = [c for c in gdf.columns if "_pho" in c and c.endswith("_chemin")]
     mapping = {}
-    collisions = []
 
-    for _, row in gdf.iterrows():
-        troncon = str(row.get(COL_TRONCONS, "undefined")).strip()
+    for _, row, troncon, col, raw in _iter_photo_entries(gdf):
+        old_abs = os.path.abspath(_resolve_absolute_path(raw))
+        base = os.path.basename(old_abs)
 
-        for col in photo_cols:
-            raw = row.get(col)
-            if not raw:
-                continue
+        fname = _build_target_filename(base, row, col, filename_strategy, pd)
+        new_abs = os.path.normpath(os.path.join(PROJECT_DIR, troncon, fname))
 
-            old_abs = _resolve_absolute_path(raw)
-            base = os.path.basename(old_abs)
+        mapping.setdefault(old_abs, []).append(new_abs)
 
-            # Construire le nom final selon la stratégie
-            fname = _build_target_filename(base, row, col, filename_strategy, pd)
-
-            new_abs = os.path.join(PROJECT_DIR, troncon, fname)
-            mapping.setdefault(old_abs, []).append(new_abs)
-
-    # Détection des collisions
-    all_dests = [os.path.normpath(dest) for lst in mapping.values() for dest in lst]
+    # Détection collisions
+    all_dests = [d for lst in mapping.values() for d in lst]
     counts = {}
     for d in all_dests:
         counts[d] = counts.get(d, 0) + 1
-    collisions = [d for d, n in counts.items() if n > 1]
 
+    collisions = [d for d, n in counts.items() if n > 1]
     return mapping, collisions
+
 
 
 # applique la relocalisation des fichiers
@@ -363,41 +360,26 @@ def _update_gdf(gdf, mapping):
 def _generate_target_mapping(gdf, collisions, strategy_for_collisions, strategy_other):
     import pandas as pd
 
-    photo_cols = [c for c in gdf.columns if "_pho" in c and c.endswith("_chemin")]
     mapping = {}
-
-    # Chemins en collision
     collisions_norm = set(os.path.normpath(os.path.abspath(c)) for c in collisions)
 
-    for _, row in gdf.iterrows():
-        troncon = str(row.get(COL_TRONCONS, "undefined")).strip()
+    for _, row, troncon, col, raw in _iter_photo_entries(gdf):
+        old_abs = os.path.abspath(_resolve_absolute_path(raw))
+        base = os.path.basename(old_abs)
 
-        for col in photo_cols:
-            raw = row.get(col)
-            if not raw:
-                continue
+        # Chemin "keep" pour détecter collision
+        root, ext = _split_filename(base)
+        fname_keep = root + ext.lower()
+        new_abs_keep = os.path.normpath(os.path.join(PROJECT_DIR, troncon, fname_keep))
+        in_collision = new_abs_keep in collisions_norm
 
-            old_abs = os.path.abspath(_resolve_absolute_path(raw))
-            base = os.path.basename(old_abs)
+        # Stratégie correcte
+        strategy = strategy_for_collisions if in_collision else strategy_other
 
-            # Chemin "keep" (pour détecter la collision)
-            root, ext = _split_filename(base)
-            ext = ext.lower()
-            fname_keep = root + ext
-            new_abs_keep = os.path.normpath(os.path.join(PROJECT_DIR, troncon, fname_keep))
+        fname = _build_target_filename(base, row, col, strategy, pd)
+        new_abs = os.path.join(PROJECT_DIR, troncon, fname)
 
-            # Collision ?
-            in_collision = (new_abs_keep in collisions_norm)
-
-            # Sélection de la bonne stratégie
-            strategy = strategy_for_collisions if in_collision else strategy_other
-
-            # Construction du nom final via la fonction centralisée
-            fname = _build_target_filename(base, row, col, strategy, pd)
-
-            # Chemin final
-            new_abs = os.path.join(PROJECT_DIR, troncon, fname)
-            mapping.setdefault(old_abs, []).append(new_abs)
+        mapping.setdefault(old_abs, []).append(new_abs)
 
     return mapping
 
